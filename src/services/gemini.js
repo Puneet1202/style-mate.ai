@@ -45,9 +45,7 @@ export const analyzeOutfit = async (file) => {
       🏷️ **Hashtags**
       #FashionAI #OOTD #StyleGuide
 
-      ═══════════════════════════════════════════════════════════════════════════════
-      ⚠️ CRITICAL SHOPPING GENERATOR
-      ═══════════════════════════════════════════════════════════════════════════════
+     
       At the very bottom, generate the "SEARCH:" line.
       
       RULES:
@@ -57,8 +55,6 @@ export const analyzeOutfit = async (file) => {
       
       Format:
       SEARCH: [Gender]'s [Upgrade Item 1], [Gender]'s [Upgrade Item 2], [Gender]'s [Upgrade Item 3]   
-
-═══════════════════════════════════════════════════════════════════════════════
 `;
     const result = await model.generateContent([prompt, imageParts]);
     const response = await result.response;
