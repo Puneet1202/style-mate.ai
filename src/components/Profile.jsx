@@ -6,12 +6,11 @@ const Profile = ({ session, onLogout }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [stats, setStats] = useState({ totalItems: 0, loading: true });
 
-  // 👇 NAYA LOGIC: Database se count pata karo
   useEffect(() => {
     const fetchStats = async () => {
       const { count, error } = await supabase
         .from('closet')
-        .select('*', { count: 'exact', head: true }); // Sirf ginti layega, data nahi
+        .select('*', { count: 'exact', head: true });
 
       if (!error) {
         setStats({ totalItems: count || 0, loading: false });
@@ -28,28 +27,26 @@ const Profile = ({ session, onLogout }) => {
   return (
     <div className="p-6 h-full flex flex-col items-center bg-gray-50">
       
-      {/* Header Space */}
       <div className="h-10"></div>
 
-      {/* Avatar */}
-      <div className="w-24 h-24 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4 shadow-lg border-4 border-white animate-fade-in text-white">
-        <span className="text-4xl font-bold">{user?.email[0].toUpperCase()}</span>
+      {/* 👇 FIXED: bg-gradient ko bg-linear kar diya */}
+      <div className="w-24 h-24 bg-linear-to-tr from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4 shadow-lg border-4 border-white animate-fade-in text-white">
+        <span className="text-4xl font-bold">{user?.user_metadata?.full_name?.[0] || user?.email[0].toUpperCase()}</span>
       </div>
 
-      {/* User Info */}
-      <h2 className="text-xl font-bold text-gray-800 mb-1">Fashionista</h2>
-      {user?.user_metadata?.full_name || "Fashionista"}
+      <h2 className="text-xl font-bold text-gray-800 mb-1">
+        {user?.user_metadata?.full_name || "Fashionista"}
+      </h2>
       <p className="text-sm text-gray-500 mb-6 bg-white px-4 py-1 rounded-full border border-gray-200 shadow-sm">
         {user?.email}
       </p>
 
-      {/* 👇 NEW: STATS CARD */}
       <div className="flex gap-4 w-full max-w-xs mb-8">
         <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
             <p className="text-3xl font-bold text-purple-600">
                 {stats.loading ? '-' : stats.totalItems}
             </p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Closet Items</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Items</p>
         </div>
         <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
             <p className="text-3xl font-bold text-pink-500">PRO</p>
@@ -75,7 +72,6 @@ const Profile = ({ session, onLogout }) => {
         </button>
       </div>
 
-      {/* LOGOUT BUTTON */}
       <button 
         onClick={handleLogoutClick}
         disabled={isLoggingOut} 

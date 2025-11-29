@@ -13,6 +13,7 @@ import { supabase } from './services/supabaseClient';
 
 function App() {
   const [session, setSession] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true); // 👈 New Loading State
   const [currentView, setCurrentView] = useState('home');
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -20,21 +21,24 @@ function App() {
   const [result, setResult] = useState("");
   const [uploadQueue, setUploadQueue] = useState([]);
 
-  // 👇 IMPORTANT: Session Listener (Login/Logout Detection)
   useEffect(() => {
-    // 1. App start hote hi check karo
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    // Session check logic
+    const checkSession = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            setSession(session);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setAuthChecking(false); // Check khatam
+        }
+    };
 
-    // 2. Jasoos lagao: Jaise hi auth state badle (Login ya Logout), turant update karo
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session); // Agar session null hua (logout), to login screen aa jayegi
-      
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
       if (!session) {
-        // Agar logout hua, to sab kuch reset kar do
         setCurrentView('home');
         setSelectedImage(null);
         setResult("");
@@ -44,7 +48,16 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 👇 Agar Session nahi hai, to seedha Auth (Login) page dikhao
+  // 👇 LOADING SCREEN (Jab tak Auth check ho raha hai)
+  if (authChecking) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
+    );
+  }
+
+  // Login Page
   if (!session) {
     return (
       <>
@@ -54,10 +67,8 @@ function App() {
     );
   }
 
-  // ... BAAKI APP LOGIC SAME RAHEGA ...
-  
+  // --- Main App Logic ---
   const handleImageUpload = (event) => {
-    // (Purana code same rakho)
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -136,16 +147,14 @@ function App() {
     setResult("");
   }
 
-  // 👇 Logout Function update
   const handleLogout = async () => {
       toast.loading("Logging out...", { id: 'auth-toast' });
       const { error } = await supabase.auth.signOut();
-      
       if (error) {
         toast.error("Logout failed!", { id: 'auth-toast' });
       } else {
         toast.success("See you soon! 👋", { id: 'auth-toast' });
-        setSession(null); // Force update state
+        setSession(null);
       }
   };
 
@@ -171,9 +180,8 @@ function App() {
         }}
       />
 
-      <div className="w-full max-w-md h-[100vh] sm:h-[90vh] bg-white sm:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col">
+      <div className="w-full max-w-md h-screen **: sm:h-[90vh] bg-white sm:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col">
         
-        {/* Header + Logout */}
         <div className="relative">
             {currentView === 'home' && <Header />}
         </div>

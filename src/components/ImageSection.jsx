@@ -3,71 +3,67 @@ import ReactMarkdown from 'react-markdown';
 
 const ImageSection = ({ currentImage, onImageSelect, onReset, onAnalyze, onSave, loading, result, onNavigate }) => {
 
-  // 👇 LOGIC UPDATE: Ab ye Emoji aur Colon dono handle karega
   let analysisText = result;
   let searchKeywords = [];
 
   if (result) {
-    // Hum "SEARCH" word dhoondenge (last wala, taaki beech mein kahin use hua ho to galti na ho)
-    // Hum Regex use kar rahe hain jo "SEARCH:" ya sirf "SEARCH" dono pakad lega
     const searchSplit = result.split(/SEARCH:|SEARCH/); 
-
-    // Agar split ho gaya (matlab SEARCH mil gaya)
     if (searchSplit.length > 1) {
-      // Aakhri hissa Keywords hain
       const rawKeywords = searchSplit[searchSplit.length - 1]; 
-      
-      // Baaki sab Analysis text hai (Emoji hata kar clean kar rahe hain)
       analysisText = searchSplit.slice(0, -1).join("").replace('🔍', '').trim();
-      
-      // Keywords ko comma se tod kar saaf kar lo
       searchKeywords = rawKeywords.split(",").map(item => item.trim()).filter(i => i);
     }
   }
 
-  // 👇 FUNCTION: Pinterest Search
   const handleShopClick = (keyword) => {
-    window.open(`https://www.pinterest.com/search/pins/?q=${keyword} fashion style`, '_blank');
+    window.open(`https://www.pinterest.com/search/pins/?q=${keyword} outfit aesthetic`, '_blank');
   };
 
   return (
-    <div className="p-5">
+    <div className="p-4 flex flex-col h-full"> 
+      
       {currentImage ? (
-        <div className="bg-gray-50 rounded-3xl p-4 shadow-inner relative transition-all">
-          <img src={currentImage} alt="Selected" className="w-full h-64 object-cover rounded-2xl mb-4 shadow-lg" />
+        <div className="bg-white rounded-3xl p-3 shadow-lg border border-purple-50 relative flex flex-col gap-4">
           
-          {!loading && (
-            <button 
-              onClick={onReset}
-              className="absolute top-6 right-6 bg-white text-red-500 w-8 h-8 rounded-full shadow-md flex items-center justify-center font-bold hover:bg-red-50 transition-colors"
-            >
-              ✕
-            </button>
-          )}
+          <div className="relative w-full bg-gray-50 rounded-2xl overflow-hidden flex justify-center items-center" style={{ maxHeight: '40vh' }}>
+            <img 
+                src={currentImage} 
+                alt="Selected" 
+                className="w-full h-full object-contain" 
+            />
+            
+            {!loading && (
+                <button 
+                onClick={onReset}
+                className="absolute top-3 right-3 bg-black/50 text-white w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center font-bold z-10"
+                >
+                ✕
+                </button>
+            )}
+          </div>
 
           {result ? (
-            <div className="bg-white p-6 rounded-xl border border-purple-100 shadow-sm text-left animate-fade-in">
-              <h3 className="font-bold text-purple-700 mb-4 flex items-center gap-2 text-lg">
-                <span>✨</span> Stylist Says:
-              </h3>
+            <div className="animate-fade-in flex flex-col gap-3">
+              <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                <span className="text-xl">✨</span>
+                <h3 className="font-bold text-purple-800 text-lg">Stylist Verdict</h3>
+              </div>
               
-              {/* Text Area */}
-              <div className="prose prose-purple prose-sm max-w-none text-gray-600 mb-6 leading-relaxed">
+              <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                 <ReactMarkdown>{analysisText}</ReactMarkdown>
               </div>
 
-              {/* 👇 Buttons Area */}
               {searchKeywords.length > 0 && (
-                <div className="mb-6 bg-purple-50 p-3 rounded-xl border border-purple-100">
+                <div className="bg-purple-50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-purple-400 mb-2 uppercase tracking-wider">
-                        🛒 Shop Similar Items
+                        🛒 Shop The Look
                     </p>
                     <div className="flex flex-wrap gap-2">
                         {searchKeywords.map((keyword, index) => (
                             <button 
                                 key={index}
                                 onClick={() => handleShopClick(keyword)}
-                                className="bg-white text-purple-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-purple-200 shadow-sm hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1"
+                                className="bg-white text-purple-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-purple-100 shadow-sm flex items-center gap-1 active:scale-95 transition-transform"
                             >
                                 🔍 {keyword}
                             </button>
@@ -76,73 +72,84 @@ const ImageSection = ({ currentImage, onImageSelect, onReset, onAnalyze, onSave,
                 </div>
               )}
 
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex gap-2 pt-2">
                   <button 
                       onClick={onSave} 
-                      className="flex-1 bg-purple-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-purple-700 transition-all flex justify-center items-center gap-2"
+                      className="flex-1 bg-black text-white py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-transform flex justify-center items-center gap-2"
                   >
-                      <span>💾</span> Save to Closet
+                      <span>💾</span> Save
                   </button>
-
                   <button 
                       onClick={onReset} 
-                      className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all border border-gray-200"
+                      className="px-4 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200"
                   >
-                      New Upload
+                      New
                   </button>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="mt-2">
               <button 
                 onClick={onAnalyze}
                 disabled={loading}
-                className={`w-full py-3 rounded-full font-bold shadow-lg text-white transition-all flex justify-center items-center ${
-                  loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
+                className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex justify-center items-center gap-2 ${
+                  loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-linear-to-r from-purple-600 to-indigo-600'
                 }`}
               >
                 {loading ? (
-                  <>Processing...</>
+                  <>Thinking... 🧠</>
                 ) : (
-                  'Ask AI Stylist 🤖'
+                  <>Ask Stylist ✨</>
                 )}
               </button>
-
+              
               {!loading && (
                 <button 
                   onClick={onSave}
-                  className="w-full py-3 rounded-full font-bold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-all flex justify-center items-center gap-2"
+                  className="w-full mt-3 py-3 text-purple-600 font-bold text-sm bg-purple-50 rounded-xl"
                 >
-                  <span>💾</span> Just Save to Closet
+                  Skip & Just Save 💾
                 </button>
               )}
             </div>
           )}
         </div>
       ) : (
-        <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-3xl p-8 text-white text-center shadow-lg relative transform transition-transform hover:scale-[1.01]">
-          <input 
-            type="file" 
-            multiple 
-            accept="image/*" 
-            onChange={onImageSelect}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-          />
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm text-2xl animate-bounce">📷</div>
-          <h2 className="text-2xl font-bold mb-2">Upload Outfit</h2>
-          <p className="text-purple-100 text-sm mb-6">Snap a pic of your clothes to get instant styling advice.</p>
-          <button className="bg-white text-purple-600 px-8 py-3 rounded-full font-bold text-sm shadow-md inline-block hover:bg-gray-50">Try Now</button>
+        <div className="flex-1 flex flex-col justify-center">
+            <div className="bg-white rounded-3xl shadow-xl p-8 text-center border border-gray-100 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-purple-500 via-pink-500 to-orange-500"></div>
+            <input 
+                type="file" 
+                multiple 
+                accept="image/*" 
+                onChange={onImageSelect}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            
+            <div className="w-24 h-24 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border-4 border-white shadow-inner">
+                <span className="text-4xl">📸</span>
+            </div>
+            
+            <h2 className="text-2xl font-black text-gray-800 mb-2 tracking-tight">Style Check</h2>
+            <p className="text-gray-500 text-sm mb-8 leading-relaxed px-4">
+                Upload your outfit to get an AI rating and shopping suggestions.
+            </p>
+            
+            <div className="bg-black text-white py-4 px-8 rounded-2xl font-bold text-sm shadow-xl inline-flex items-center gap-3 transform group-hover:-translate-y-1 transition-all">
+                <span>Select Photo</span>
+            </div>
+            </div>
         </div>
       )}
 
-      {/* Footer Navigation */}
+      {/* 👇 YAHAN HAI LOGIC: Ye code tumhara missing tha */}
       <div className="flex justify-between gap-3 mt-8">
         {['My Closet', 'AI Mix', 'Find'].map((item, index) => (
           <div 
             key={index} 
             onClick={() => {
                 if (item === 'My Closet') {
-                    if (onNavigate) onNavigate('closet');
+                    if (onNavigate) onNavigate('closet'); // <-- Ab ye error nahi dega
                 } else {
                     alert("Coming Soon! 🚧");
                 }
@@ -154,6 +161,8 @@ const ImageSection = ({ currentImage, onImageSelect, onReset, onAnalyze, onSave,
           </div>
         ))}
       </div>
+      
+      <div className="h-20"></div> 
     </div>
   );
 };
