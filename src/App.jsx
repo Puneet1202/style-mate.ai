@@ -10,6 +10,7 @@ import { analyzeOutfit } from './services/gemini';
 import { saveToCloset } from './services/closetService';
 import { Toaster, toast } from 'react-hot-toast';
 import { supabase } from './services/supabaseClient';
+import {  updateClosetItem } from './services/closetService';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -68,10 +69,13 @@ function App() {
   }
 
   // --- Main App Logic ---
+ // 👇 UPDATED: BULK UPLOAD WITH SILENT AI
   const handleImageUpload = (event) => {
     const files = event.target.files;
+    
     if (!files || files.length === 0) return;
 
+    // CASE: BULK UPLOAD
     if (files.length > 1) {
         const totalFiles = files.length;
         const toastId = toast.loading(`Uploading ${totalFiles} items... 🚀`);
@@ -79,6 +83,8 @@ function App() {
 
         const uploadPromises = Array.from(files).map(async (file) => {
             const tempId = Date.now() + Math.random();
+            
+            // Queue mein add karo
             const tempItem = {
                 id: tempId,
                 image_url: URL.createObjectURL(file),
@@ -88,21 +94,36 @@ function App() {
             setUploadQueue(prev => [tempItem, ...prev]);
 
             try {
-                await saveToCloset(file, "Bulk Uploaded (No AI)");
-                setUploadQueue(prev => prev.filter(item => item.id !== tempId));
+                // 1. SAVE: Pehle save karo (Analyzing text ke sath)
+                const saveRes = await saveToCloset(file, "✨ AI Styling...");
+                
+                if (saveRes.success) {
+                    // Queue se hatao (ab closet mein dikhega)
+                    setUploadQueue(prev => prev.filter(item => item.id !== tempId));
+
+                    // 2. SILENT AI: Ab background mein AI chalao
+                    console.log(`Starting AI for ${file.name}...`);
+                    
+                    analyzeOutfit(file).then(async (aiText) => {
+                        await updateClosetItem(saveRes.id, aiText);
+                        console.log(`AI Done for ${file.name}!`);
+                    });
+                }
             } catch (error) {
-                console.error("Upload failed", error);
+                console.error("Upload failed for one item", error);
             }
         });
 
         Promise.all(uploadPromises).then(() => {
-            toast.success("All items saved successfully! ✨", { id: toastId });
+            toast.success("All items saved! AI is working... 🤖", { id: toastId });
         }).catch(() => {
             toast.error("Some uploads failed.", { id: toastId });
         });
+
         return;
     }
 
+    // CASE: SINGLE UPLOAD (Preview Mode)
     const file = files[0];
     if (file) {
       setSelectedFile(file);
@@ -121,23 +142,53 @@ function App() {
     setLoading(false);
   };
 
-  const handleSaveToCloset = () => {
+  const handleSaveToCloset = async () => {
     if (!selectedFile) {
       toast.error("Photo to select karo! 📸");
       return;
     }
-    const fileToUpload = selectedFile;
-    const descriptionToSave = result || "Uploaded by User";
-    
-    handleReset(); 
 
+    const fileToUpload = selectedFile;
+    
+    // Agar result hai to wo use karo, nahi to placeholder daalo
+    let descriptionToSave = result;
+    const needsSilentAnalysis = !result;
+
+    if (needsSilentAnalysis) {
+        descriptionToSave = "✨ Analyzing in background...";
+    }
+
+    handleReset(); // UI Saaf
+
+    // Save Process
     toast.promise(
-      saveToCloset(fileToUpload, descriptionToSave),
-      {
-        loading: 'Uploading in background... ☁️',
-        success: 'Saved to Closet! ✅',
-        error: 'Upload failed ❌',
-      }
+        (async () => {
+            // 1. Save to Database
+            const saveRes = await saveToCloset(fileToUpload, descriptionToSave);
+            if (!saveRes.success) throw new Error(saveRes.error);
+
+            // 2. Agar Direct Save tha, to ab chupke se AI chalao
+            if (needsSilentAnalysis) {
+                console.log("Silent Analysis Starting...");
+                // AI call (Background mein)
+                analyzeOutfit(fileToUpload).then(async (aiText) => {
+                    // Jab AI jawab de, to Database update kar do
+                    await updateClosetItem(saveRes.id, aiText);
+                    console.log("Silent Analysis Done & Updated!");
+                    // Optional: User ko ek chota toast dikha sakte ho ki "Tags Updated"
+                    toast.success("AI Tags Added! 🏷️", { 
+                        icon: '🤖',
+                        style: { fontSize: '12px', background: '#333', color: '#fff' }
+                    });
+                });
+            }
+            return "Saved!";
+        })(),
+        {
+            loading: 'Saving...',
+            success: 'Saved to Closet! ✅',
+            error: 'Failed ❌',
+        }
     );
   };
 

@@ -99,3 +99,20 @@ export const deleteFromCloset = async (itemId, imageUrl) => {
     return { success: false, error: error.message };
   }
 };
+
+// src/services/closetService.js ke END mein:
+
+export const updateClosetItem = async (id, newDescription) => {
+  try {
+    const { error } = await supabase
+      .from('closet')
+      .update({ ai_description: newDescription })
+      .eq('id', id);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("Update Error:", error);
+    return { success: false };
+  }
+};
